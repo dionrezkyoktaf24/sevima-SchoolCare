@@ -5,6 +5,8 @@ import { sseHub } from "@/server/realtime/sse-hub";
 import { errorResponse, handleApiError } from "@/lib/api/response";
 import { checkRateLimit, getClientIp } from "@/lib/security/rate-limit";
 import { randomUUID } from "node:crypto";
+import { verifyInternalCounselorAccess } from "@/server/auth/guard";
+import { z } from "zod";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,32 +34,57 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 2. Validate token presence & format
+    // 2. Validate student token or counselor authorization
     const tokenParam = request.nextUrl.searchParams.get("token");
-    if (!tokenParam) {
-      return errorResponse("VALIDATION_ERROR", "Parameter 'token' wajib disertakan.", 400);
+    const reportIdParam = request.nextUrl.searchParams.get("report_id");
+    const hasAuthHeader = Boolean(request.headers.get("authorization") || request.headers.get("x-internal-key"));
+
+    let report: { id: string; status: string; updatedAt: Date } | null = null;
+
+    if (hasAuthHeader && reportIdParam) {
+      const auth = verifyInternalCounselorAccess(request);
+      if (!auth.authorized) {
+        return errorResponse("UNAUTHORIZED", auth.reason ?? "Akses tidak diizinkan.", 401);
+      }
+
+      const uuidCheck = z.string().uuid().safeParse(reportIdParam);
+      if (!uuidCheck.success) {
+        return errorResponse("VALIDATION_ERROR", "Format report_id harus berupa UUID yang valid.", 400);
+      }
+
+      report = await prisma.report.findUnique({
+        where: { id: uuidCheck.data },
+        select: {
+          id: true,
+          status: true,
+          updatedAt: true,
+        },
+      });
+    } else {
+      // Student connection must provide token
+      if (!tokenParam) {
+        return errorResponse("VALIDATION_ERROR", "Parameter 'token' wajib disertakan.", 400);
+      }
+
+      const validation = trackReportSchema.safeParse({ token: tokenParam });
+      if (!validation.success) {
+        return errorResponse(
+          "NOT_FOUND",
+          "Laporan tidak ditemukan atau format kode tiket tidak valid.",
+          404
+        );
+      }
+
+      const secretToken = validation.data.token;
+      report = await prisma.report.findUnique({
+        where: { secretToken },
+        select: {
+          id: true,
+          status: true,
+          updatedAt: true,
+        },
+      });
     }
-
-    const validation = trackReportSchema.safeParse({ token: tokenParam });
-    if (!validation.success) {
-      return errorResponse(
-        "NOT_FOUND",
-        "Laporan tidak ditemukan atau format kode tiket tidak valid.",
-        404
-      );
-    }
-
-    const secretToken = validation.data.token;
-
-    // 3. Resolve report strictly from PostgreSQL
-    const report = await prisma.report.findUnique({
-      where: { secretToken },
-      select: {
-        id: true,
-        status: true,
-        updatedAt: true,
-      },
-    });
 
     if (!report) {
       return errorResponse(

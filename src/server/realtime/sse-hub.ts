@@ -22,6 +22,13 @@ export interface StatusUpdatedEventPayload {
   updated_at: string;
 }
 
+export interface MessageEventPayload {
+  id: string;
+  sender_role: "STUDENT" | "COUNSELOR";
+  message: string;
+  created_at: string;
+}
+
 export class SSEHub {
   // Map<reportId, Set<SSEClient>>
   private subscriptions = new Map<string, Set<SSEClient>>();
@@ -75,6 +82,30 @@ export class SSEHub {
     for (const client of Array.from(clientSet)) {
       try {
         client.send("status_updated", payload);
+        deliveredCount++;
+      } catch {
+        // Broken pipe / connection lost, remove subscriber
+        this.unsubscribe(client);
+      }
+    }
+
+    return deliveredCount;
+  }
+
+  /**
+   * Broadcasts a `new_message` event strictly to clients subscribed to the given reportId.
+   * Never leaks messages to other reports.
+   */
+  publishNewMessage(reportId: string, message: MessageEventPayload): number {
+    const clientSet = this.subscriptions.get(reportId);
+    if (!clientSet || clientSet.size === 0) {
+      return 0;
+    }
+
+    let deliveredCount = 0;
+    for (const client of Array.from(clientSet)) {
+      try {
+        client.send("new_message", message);
         deliveredCount++;
       } catch {
         // Broken pipe / connection lost, remove subscriber

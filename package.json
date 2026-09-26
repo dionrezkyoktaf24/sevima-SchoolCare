@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "tsx tests/phase2.test.ts && tsx tests/phase3.test.ts && tsx tests/phase4.test.ts"
+    "test": "tsx tests/phase2.test.ts && tsx tests/phase3.test.ts && tsx tests/phase4.test.ts && tsx tests/phase5.test.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

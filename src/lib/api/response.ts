@@ -114,6 +114,13 @@ export function handleApiError(error: unknown): NextResponse<ApiErrorResponse> {
     return errorResponse("INTERNAL_SERVER_ERROR", err.message, 500);
   }
 
+  // Handle Chat service errors
+  if (error && typeof error === "object" && "name" in error && error.name === "ChatServiceError") {
+    const err = error as unknown as { code: string; message: string; statusCode: number };
+    const apiCode: ApiErrorCode = err.code === "NOT_FOUND" ? "NOT_FOUND" : (err.code as ApiErrorCode) || "INTERNAL_SERVER_ERROR";
+    return errorResponse(apiCode, err.message, err.statusCode || 400);
+  }
+
   // Handle operational errors
   if (process.env.NODE_ENV === "development") {
     console.error("[API_ERROR]", error);
