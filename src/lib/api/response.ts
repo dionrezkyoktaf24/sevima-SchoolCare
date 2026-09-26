@@ -88,6 +88,20 @@ export function handleApiError(error: unknown): NextResponse<ApiErrorResponse> {
     return errorResponse("INTERNAL_SERVER_ERROR", "Terjadi kendala pada penyimpanan data.", 500);
   }
 
+  // Handle malformed JSON
+  if (error instanceof SyntaxError) {
+    return errorResponse("VALIDATION_ERROR", "Format JSON dalam request body tidak valid.", 400);
+  }
+
+  // Handle service errors
+  if (error && typeof error === "object" && "name" in error && error.name === "ReportServiceError") {
+    const err = error as unknown as { code: string; message: string };
+    if (err.code === "SCHOOL_NOT_FOUND" || err.code === "REPORT_NOT_FOUND") {
+      return errorResponse("NOT_FOUND", err.message, 404);
+    }
+    return errorResponse("INTERNAL_SERVER_ERROR", err.message, 500);
+  }
+
   // Handle operational errors
   if (process.env.NODE_ENV === "development") {
     console.error("[API_ERROR]", error);

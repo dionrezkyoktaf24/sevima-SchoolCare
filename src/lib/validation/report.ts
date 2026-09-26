@@ -89,3 +89,20 @@ export const trackReportSchema = z.object({
 });
 
 export type TrackReportInput = z.infer<typeof trackReportSchema>;
+
+/**
+ * Schema for updating report status (TPPK internal).
+ */
+export const updateReportStatusSchema = z.object({
+  report_id: z
+    .string({
+      error: "ID laporan (report_id) wajib diisi.",
+    })
+    .trim()
+    .uuid("Format report_id harus berupa UUID yang valid."),
+  status: z.enum(["RECEIVED", "UNDER_REVIEW", "ACTION_TAKEN", "RESOLVED"], {
+    error: "Status laporan tidak valid. Pilihan yang tersedia: RECEIVED, UNDER_REVIEW, ACTION_TAKEN, RESOLVED.",
+  }),
+});
+
+export type UpdateReportStatusInput = z.infer<typeof updateReportStatusSchema>;
