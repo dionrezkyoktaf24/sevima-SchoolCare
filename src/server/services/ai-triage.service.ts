@@ -167,7 +167,7 @@ export class AiTriageService {
    */
   private async callGeminiApi(promptPkg: TriagePromptPackage): Promise<string> {
     const apiKey = process.env.GEMINI_API_KEY?.trim();
-    const model = process.env.GEMINI_MODEL?.trim() || "gemini-1.5-flash";
+    const model = process.env.GEMINI_MODEL?.trim();
 
     if (!apiKey) {
       throw new AiTriageError(
@@ -179,7 +179,7 @@ export class AiTriageService {
     if (!model) {
       throw new AiTriageError(
         "AI_CONFIG_ERROR",
-        "Model Gemini AI tidak valid atau tidak ditentukan."
+        "Model Gemini AI tidak valid atau tidak ditentukan (GEMINI_MODEL tidak ditemukan)."
       );
     }
 

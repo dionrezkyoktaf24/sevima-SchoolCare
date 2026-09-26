@@ -292,6 +292,21 @@ async function runPhase3Tests() {
     // Restore key
     process.env.GEMINI_API_KEY = savedKey;
 
+    // Test missing GEMINI_MODEL
+    const savedModel = process.env.GEMINI_MODEL;
+    delete process.env.GEMINI_MODEL;
+
+    const noModelRes = await triageHandler(malformedReq, {
+      params: Promise.resolve({ reportId: testReportId }),
+    });
+    assert(
+      noModelRes.status === 500,
+      "Test 6.2: Missing GEMINI_MODEL returns safe controlled error (500)"
+    );
+
+    // Restore model
+    process.env.GEMINI_MODEL = savedModel;
+
     // -------------------------------------------------------------
     // Test 7: Security check on response payload
     // -------------------------------------------------------------
