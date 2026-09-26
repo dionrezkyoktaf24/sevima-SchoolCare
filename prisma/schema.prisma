@@ -1,0 +1,85 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum SeverityLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+
+  @@map("severity_level")
+}
+
+enum ReportStatus {
+  RECEIVED
+  UNDER_REVIEW
+  ACTION_TAKEN
+  RESOLVED
+
+  @@map("report_status")
+}
+
+enum SenderRole {
+  STUDENT
+  COUNSELOR
+
+  @@map("sender_role")
+}
+
+model School {
+  id        String   @id @db.VarChar(50)
+  name      String   @db.VarChar(255)
+  city      String   @db.VarChar(100)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  reports Report[]
+
+  @@map("schools")
+}
+
+model Report {
+  id               String        @id @default(uuid()) @db.Uuid
+  schoolId         String        @map("school_id") @db.VarChar(50)
+  secretToken      String        @unique @map("secret_token") @db.VarChar(20)
+  category         String        @db.VarChar(50)
+  incidentLocation String        @map("incident_location") @db.VarChar(150)
+  incidentTime     String?       @map("incident_time") @db.VarChar(100)
+  description      String        @db.Text
+  evidenceUrl      String?       @map("evidence_url") @db.Text
+  status           ReportStatus  @default(RECEIVED)
+  aiSeverity       SeverityLevel @default(MEDIUM) @map("ai_severity")
+  aiConfidence     Decimal?      @map("ai_confidence") @db.Decimal(4, 3)
+  aiRiskSummary    String?       @map("ai_risk_summary") @db.Text
+  aiActionPlan     Json          @default("[]") @map("ai_action_plan")
+  aiDraftResponse  String?       @map("ai_draft_response") @db.Text
+  createdAt        DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  school   School          @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  messages ReportMessage[]
+
+  @@index([schoolId, status], map: "idx_reports_school_status")
+  @@index([schoolId, aiSeverity], map: "idx_reports_school_severity")
+  @@map("reports")
+}
+
+model ReportMessage {
+  id        String     @id @default(uuid()) @db.Uuid
+  reportId  String     @map("report_id") @db.Uuid
+  sender    SenderRole
+  message   String     @db.Text
+  createdAt DateTime   @default(now()) @map("created_at") @db.Timestamptz
+
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([reportId, createdAt(sort: Asc)], map: "idx_messages_report_created")
+  @@map("report_messages")
+}
