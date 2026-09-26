@@ -3,6 +3,7 @@ import { updateReportStatusSchema } from "@/lib/validation/report";
 import { reportService } from "@/server/services/report.service";
 import { errorResponse, handleApiError, successResponse } from "@/lib/api/response";
 import { verifyInternalCounselorAccess } from "@/server/auth/guard";
+import { sseHub } from "@/server/realtime/sse-hub";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +36,9 @@ export async function PATCH(request: NextRequest) {
       validatedData.report_id,
       validatedData.status
     );
+
+    // 5. Publish real-time SSE event to subscribed students (guaranteed post-database commit)
+    sseHub.publishStatusUpdate(result.report_id, result.status, result.updated_at);
 
     return successResponse(result, 200);
   } catch (error) {
