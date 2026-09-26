@@ -37,7 +37,16 @@ export async function GET(request: NextRequest) {
     // 2. Validate student token or counselor authorization
     const tokenParam = request.nextUrl.searchParams.get("token");
     const reportIdParam = request.nextUrl.searchParams.get("report_id");
-    const hasAuthHeader = Boolean(request.headers.get("authorization") || request.headers.get("x-internal-key"));
+    const cookieHeader = request.headers.get("cookie") ?? "";
+    const hasSessionCookie = cookieHeader
+      .split(";")
+      .map((entry) => entry.trim())
+      .some((entry) => entry.startsWith("schoolcare_tppk_session="));
+    const hasAuthHeader = Boolean(
+      request.headers.get("authorization") ||
+        request.headers.get("x-internal-key") ||
+        hasSessionCookie
+    );
 
     let report: { id: string; status: string; updatedAt: Date } | null = null;
 
