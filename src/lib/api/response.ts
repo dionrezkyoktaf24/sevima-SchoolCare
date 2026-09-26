@@ -102,6 +102,18 @@ export function handleApiError(error: unknown): NextResponse<ApiErrorResponse> {
     return errorResponse("INTERNAL_SERVER_ERROR", err.message, 500);
   }
 
+  // Handle AI triage errors
+  if (error && typeof error === "object" && "name" in error && error.name === "AiTriageError") {
+    const err = error as unknown as { code: string; message: string };
+    if (err.code === "REPORT_NOT_FOUND") {
+      return errorResponse("NOT_FOUND", err.message, 404);
+    }
+    if (err.code === "AI_CONCURRENT_REQUEST") {
+      return errorResponse("CONFLICT_ERROR", err.message, 409);
+    }
+    return errorResponse("INTERNAL_SERVER_ERROR", err.message, 500);
+  }
+
   // Handle operational errors
   if (process.env.NODE_ENV === "development") {
     console.error("[API_ERROR]", error);
