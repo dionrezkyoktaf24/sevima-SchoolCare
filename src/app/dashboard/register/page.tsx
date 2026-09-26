@@ -1,30 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
-export default function TppkLoginPage() {
+export default function TppkRegisterPage() {
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    async function checkSession() {
-      try {
-        const response = await fetch("/api/auth/session", { cache: "no-store" });
-        if (response.ok) {
-          router.replace("/dashboard");
-        }
-      } catch {
-        // Ignore and stay on login page when session is unavailable.
-      }
-    }
-
-    void checkSession();
-  }, [router]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -32,21 +18,21 @@ export default function TppkLoginPage() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("/api/auth/login", {
+      const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, password, confirmPassword }),
       });
 
       const json = await response.json();
       if (!response.ok || !json.success) {
-        setError(json?.error?.message ?? "Email atau password tidak valid.");
+        setError(json?.error?.message ?? "Registrasi gagal.");
         return;
       }
 
-      router.push("/dashboard");
+      router.push("/dashboard/login");
       router.refresh();
     } catch {
       setError("Tidak dapat terhubung ke server. Silakan coba beberapa saat lagi.");
@@ -63,20 +49,20 @@ export default function TppkLoginPage() {
             <span aria-hidden="true" className="text-xl font-bold">S</span>
           </div>
           <p className="mt-4 text-xs font-semibold uppercase tracking-[0.2em] text-sky-700">SchoolCare</p>
-          <h1 className="mt-2 text-2xl font-extrabold text-slate-900">Masuk Guru / TPPK</h1>
+          <h1 className="mt-2 text-2xl font-extrabold text-slate-900">Daftar Guru / TPPK</h1>
           <p className="mt-2 text-sm text-slate-600">
-            Akses ruang kerja internal untuk penanganan laporan sekolah secara aman.
+            Buat akun internal default untuk login TPPK bila ingin mengganti kredensial demo.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} noValidate className="space-y-4" aria-label="Form login TPPK">
-          <div className="rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-800">
-            Default demo: <span className="font-semibold">admin</span> / <span className="font-semibold">schoolcare-2026</span>
+        <form onSubmit={handleSubmit} noValidate className="space-y-4" aria-label="Form registrasi TPPK">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700">
+            Default demo tetap aktif jika belum ada akun custom: <span className="font-semibold">admin</span> / <span className="font-semibold">schoolcare-2026</span>
           </div>
 
           <div className="space-y-2">
             <label htmlFor="username" className="block text-sm font-medium text-slate-700">
-              Username / Email
+              Nama Sekolah
             </label>
             <input
               id="username"
@@ -85,10 +71,10 @@ export default function TppkLoginPage() {
               value={username}
               onChange={(event) => setUsername(event.target.value)}
               className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"
-              placeholder="username atau email"
+              placeholder="Masukkan Nama Sekolah"
               required
               aria-invalid={Boolean(error)}
-              aria-describedby={error ? "login-error" : undefined}
+              aria-describedby={error ? "register-error" : undefined}
             />
           </div>
 
@@ -99,35 +85,53 @@ export default function TppkLoginPage() {
             <input
               id="password"
               type="password"
-              autoComplete="current-password"
+              autoComplete="new-password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"
               placeholder="Masukkan password"
               required
               aria-invalid={Boolean(error)}
-              aria-describedby={error ? "login-error" : undefined}
+              aria-describedby={error ? "register-error" : undefined}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700">
+              Konfirmasi Password
+            </label>
+            <input
+              id="confirmPassword"
+              type="password"
+              autoComplete="new-password"
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"
+              placeholder="Ulangi password"
+              required
+              aria-invalid={Boolean(error)}
+              aria-describedby={error ? "register-error" : undefined}
             />
           </div>
 
           {error && (
-            <div id="login-error" role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">
+            <div id="register-error" role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">
               {error}
             </div>
           )}
 
           <Button type="submit" variant="primary" size="md" className="w-full justify-center" disabled={isSubmitting}>
-            {isSubmitting ? "Memeriksa kredensial..." : "Masuk ke Dashboard"}
+            {isSubmitting ? "Membuat akun..." : "Daftar Akun"}
           </Button>
 
           <p className="text-center text-sm text-slate-600">
-            Belum punya akun TPPK?{" "}
+            Sudah punya akun?{" "}
             <button
               type="button"
-              onClick={() => router.push("/dashboard/register")}
+              onClick={() => router.push("/dashboard/login")}
               className="font-semibold text-sky-700 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 rounded-sm"
             >
-              Daftar akun
+              Masuk
             </button>
           </p>
         </form>

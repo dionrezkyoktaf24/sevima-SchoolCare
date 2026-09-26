@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     const email = typeof parsed.email === "string" ? parsed.email.trim() : "";
     const password = typeof parsed.password === "string" ? parsed.password : "";
 
-    const credentials = getConfiguredTppkCredentials();
+    const credentials = await getConfiguredTppkCredentials();
     const normalizedUsername = username || email;
 
     if (

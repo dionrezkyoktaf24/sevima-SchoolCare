@@ -64,6 +64,9 @@ export function Header() {
 
           {/* Desktop Action CTAs */}
           <div className="hidden md:flex items-center gap-3">
+            <Button href="/dashboard/login" variant="outline" size="sm">
+              Masuk Guru / TPPK
+            </Button>
             <Button href="/lacak" variant="outline" size="sm">
               Lacak Laporan
             </Button>
@@ -115,6 +118,9 @@ export function Header() {
               </nav>
 
               <div className="flex flex-col gap-2 pt-1">
+                <Button href="/dashboard/login" variant="outline" size="md" className="w-full justify-center" onClick={closeMobileMenu}>
+                  Masuk Guru / TPPK
+                </Button>
                 <Button href="/lapor" variant="primary" size="md" className="w-full justify-center" onClick={closeMobileMenu}>
                   Buat Laporan
                 </Button>
