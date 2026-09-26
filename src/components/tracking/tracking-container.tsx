@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { TrackingForm } from "./tracking-form";
 import { TrackingResult, type TrackedReportData } from "./tracking-result";
 import { RefreshCwIcon } from "@/components/ui/icons";
+import { useRealtimeTracking } from "@/hooks/use-realtime-tracking";
 
 const TOKEN_REGEX = /^CARE-[0-9A-F]{4}-[0-9A-F]{4}$/i;
 
@@ -57,6 +58,7 @@ export function TrackingContainer() {
     }
     return null;
   });
+  const [sseChatTrigger, setSseChatTrigger] = useState(0);
 
   // Prevent multiple concurrent fetches
   const fetchingRef = useRef(false);
@@ -179,18 +181,38 @@ export function TrackingContainer() {
   };
 
   // 5. Refresh Status Handler
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
     if (currentTrackedToken) {
       fetchReport(currentTrackedToken, true);
     }
-  };
+  }, [currentTrackedToken, fetchReport]);
 
-  // 6. Reset / Track Another Report Handler
+  // 6. Realtime SSE Event Listeners
+  const handleStatusUpdated = useCallback(() => {
+    // Re-fetch report using GET /api/reports/track (Source of Truth)
+    if (currentTrackedToken) {
+      void fetchReport(currentTrackedToken, true);
+    }
+  }, [currentTrackedToken, fetchReport]);
+
+  const handleNewMessage = useCallback(() => {
+    // Notify PrivateChat component to re-fetch messages
+    setSseChatTrigger((prev) => prev + 1);
+  }, []);
+
+  const { connectionStatus } = useRealtimeTracking({
+    token: currentTrackedToken,
+    onStatusUpdated: handleStatusUpdated,
+    onNewMessage: handleNewMessage,
+  });
+
+  // 7. Reset / Track Another Report Handler
   const handleReset = () => {
     setReport(null);
     setCurrentTrackedToken(null);
     setError(null);
     setTokenInput("");
+    setSseChatTrigger(0);
 
     if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
@@ -225,6 +247,8 @@ export function TrackingContainer() {
         onRefresh={handleRefresh}
         isRefreshing={isRefreshing}
         onReset={handleReset}
+        connectionStatus={connectionStatus}
+        sseChatTrigger={sseChatTrigger}
       />
     );
   }

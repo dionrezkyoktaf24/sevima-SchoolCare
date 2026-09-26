@@ -9,6 +9,9 @@ import {
   ShieldIcon,
 } from "@/components/ui/icons";
 import { TrackingStepper, type ReportStatusType } from "./tracking-stepper";
+import { RealtimeIndicator } from "./realtime-indicator";
+import { PrivateChat } from "@/components/chat/private-chat";
+import type { ConnectionStatus } from "@/hooks/use-realtime-tracking";
 
 export interface TrackedReportData {
   report_id: string;
@@ -34,6 +37,8 @@ interface TrackingResultProps {
   onRefresh: () => void;
   isRefreshing: boolean;
   onReset: () => void;
+  connectionStatus: ConnectionStatus;
+  sseChatTrigger: number;
 }
 
 export function TrackingResult({
@@ -42,6 +47,8 @@ export function TrackingResult({
   onRefresh,
   isRefreshing,
   onReset,
+  connectionStatus,
+  sseChatTrigger,
 }: TrackingResultProps) {
   const [copied, setCopied] = useState(false);
 
@@ -112,8 +119,9 @@ export function TrackingResult({
             </p>
           </div>
 
-          {/* Refresh Action */}
-          <div className="flex items-center gap-2">
+          {/* Realtime Status Indicator & Manual Refresh Action */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            <RealtimeIndicator status={connectionStatus} />
             <Button
               type="button"
               variant="outline"
@@ -240,6 +248,9 @@ export function TrackingResult({
           </p>
         </div>
       </div>
+
+      {/* Private Chat Section */}
+      <PrivateChat token={token} sseRefreshTrigger={sseChatTrigger} />
     </div>
   );
 }
